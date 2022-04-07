@@ -19,7 +19,7 @@ unsigned long TempRHmillis = 0;
 float t = 0;
 float rh = 0;
 
-#define potPin A0 //input for potmeter
+#define potPin A0 //input for z-punkt fuktnivå
 byte potValue = 0; // setter potmeterverdi til 0
 
 #define delayPin A1 //input for delay
@@ -32,7 +32,10 @@ int sistePumpe = 0; //Tid mellom pumpekjøring
 #define sensorPin A3    // setter sensorpin
 int sensorValue = 0;  // setter sensorpinverdi til 0
 
-#define relPin 6 //pin for rele
+#define relPinPump 6 //pin for pumpe
+#define relPinSolenoid 7 //pin for soleniod
+#define startButton 12 //pin for startknapp
+#define startButtonLED 11 //pin for LED i startknapp
 
 //Millisdelay
 int period = 1000;
@@ -40,8 +43,10 @@ unsigned long time_now = 0;
 
 void setup() {
 
-  pinMode(relPin, OUTPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(relPinPump, OUTPUT);
+  pinMode(relPinSolenoid, OUTPUT);
+  pinMode(startButton, INPUT);
+  pinMode(startButtonLED, OUTPUT);
   pinMode(delayPin, INPUT);
 
   Serial.begin(9600);
@@ -50,6 +55,12 @@ void setup() {
   //OLED
   delay(1000);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  display.print("Autovanner!");
+  display.display();
+  
 
   time_now = millis();
 }
@@ -124,24 +135,24 @@ void displayText(int leseDelayTilDisplay, char pumpeStatus, int sistePumpe) {
   display.display();
 }
 
-int readDelay(){
-  int delayValue = map(analogRead(delayPin),0,1023,5,7200);
+int readDelay() {
+  int delayValue = map(analogRead(delayPin), 0, 1023, 5, 7200);
   return delayValue;
 }
 
-String showTimer(int delayValue){
-//  if (delayValue >= 3600){
-//    delayValue = delayValue / 3600;
-//    return delayValue + String(" T");
-//  }
-  if(delayValue >= 60){
+String showTimer(int delayValue) {
+  //  if (delayValue >= 3600){
+  //    delayValue = delayValue / 3600;
+  //    return delayValue + String(" T");
+  //  }
+  if (delayValue >= 60) {
     delayValue = delayValue / 60;
     return delayValue + String(" min");
   }
   else {
     return delayValue + String(" sek");
   }
-  
+
 }
 
 void loop() {
@@ -156,17 +167,37 @@ void loop() {
       //Skriv til OLED
       displayText(delayValue, 0, sistePumpe);
     }
+
+    //Hvis knapp trykkes, kjør pumpe
+    if (startButton == HIGH) {
+      while (startButton == HIGH) {
+        digitalWrite(startButtonLED, LOW);
+        digitalWrite(relPinSolenoid, HIGH);
+        digitalWrite(relPinPump, HIGH);
+        sistePumpe = millis();
+        displayText(delayValue, 1, sistePumpe);
+      }
+      digitalWrite(startButtonLED, HIGH);
+      digitalWrite(relPinSolenoid, LOW);
+      digitalWrite(relPinPump, LOW);
+      delayValue = readDelay();
+    }
   }
 
-  //  IF-check for pump/relay. If potValue is over sensorValue: start pumperelay
+  //  IF-check for pump/relay. If potValue is over sensorValue: åpne solenoid og start pumperelay
   if (sensorValue < potValue) {
     //PUMPE PÅ:
-    digitalWrite(relPin, HIGH);
+    digitalWrite(relPinSolenoid, HIGH);
+    delay(20);
+    digitalWrite(relPinPump, HIGH);
     sistePumpe = millis();
     displayText(delayValue, 1, sistePumpe);
 
     delay(pumpetimerValue * 1000);
-    digitalWrite(relPin, LOW);
+
+    digitalWrite(relPinPump, LOW);
+    delay(20);
+    digitalWrite(relPinSolenoid, LOW);
     time_now = millis() - period;
   }
 }

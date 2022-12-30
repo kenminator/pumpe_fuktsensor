@@ -1,9 +1,3 @@
-Ustyr for å automatisk vanne planter, ved bruk av fuktsensor og vannpumpe.
-Flere potmetere brukes for å justere verdier.
-RH og Temp.sensor brukes for å kunne åpne lufteluke i dyrkekammer.
----
-Lagt til git 070721
-
 Hovedkomponenter:
 Potentiometer x4
 https://www.elfadistrelec.no/no/rotasjonspotensiometer-10kohm-100mw-20-piher-amphenol-pc16sh07cp04-103b2020-ta/p/16426571
